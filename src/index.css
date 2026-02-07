@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+:root {
+  --brand-primary: rgb(152, 16, 250);
+  --brand-hover: rgb(130, 10, 220);
+  --bg-main: #F8FAFC;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--bg-main);
+  color: #1e293b;
+  -webkit-font-smoothing: antialiased;
+}
+
+.text-gradient {
+  background: linear-gradient(to right, rgb(152, 16, 250), #7c0dbd);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.btn-cta {
+  background-color: var(--brand-primary);
+  color: white;
+  transition: all 0.2s ease;
+}
+
+.btn-cta:hover {
+  background-color: var(--brand-hover);
+}
+
+.shadow-card {
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.05), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+}
+
+.sidebar-item-active {
+  background-color: rgba(152, 16, 250, 0.08);
+  color: var(--brand-primary);
+}
+
+::-webkit-scrollbar {
+  width: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
