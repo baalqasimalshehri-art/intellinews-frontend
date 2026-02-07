@@ -21,6 +21,7 @@ export interface UserPreferences {
   deliveryTime: string;
   deliveryDay?: string;
   deliveryDate?: number;
+  timezone?: string;
   summaryLength: 'concise' | 'detailed';
   duplicateFiltering: boolean;
 }

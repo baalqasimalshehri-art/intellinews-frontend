@@ -80,6 +80,7 @@ const Preferences = () => {
             deliveryTime: userPrefs.deliveryTime || '09:00',
             deliveryDay: userPrefs.deliveryDay || 'Monday',
             deliveryDate: userPrefs.deliveryDate || 1,
+            timezone: userPrefs.timezone || 'UTC',
             source: sourceEnum,
             summaryLength: userPrefs.summaryLength || 'concise',
             duplicateFiltering: userPrefs.duplicateFiltering !== undefined ? userPrefs.duplicateFiltering : true
@@ -133,6 +134,7 @@ const Preferences = () => {
         deliveryTime: prefs.deliveryTime,
         deliveryDay: prefs.deliveryDay,
         deliveryDate: prefs.deliveryDate,
+        timezone: prefs.timezone || 'UTC',
         autoScrape: false  // Don't auto-scrape when saving preferences
       });
 
@@ -148,7 +150,8 @@ const Preferences = () => {
           duplicateFiltering: prefs.duplicateFiltering,
           deliveryTime: prefs.deliveryTime,
           deliveryDay: prefs.deliveryDay,
-          deliveryDate: prefs.deliveryDate
+          deliveryDate: prefs.deliveryDate,
+          timezone: prefs.timezone || 'UTC'
         }
       };
 
@@ -324,13 +327,33 @@ const Preferences = () => {
                 </div>
               )}
               <div className="space-y-2">
-                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Target Window (UTC)</label>
-                <input 
-                  type="time" 
+                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Delivery Time (Local)</label>
+                <input
+                  type="time"
                   value={prefs.deliveryTime}
                   onChange={(e) => setPrefs({...prefs, deliveryTime: e.target.value})}
                   className="w-full h-14 px-5 rounded-xl border border-slate-200 bg-white text-sm font-bold focus:border-[rgb(152,16,250)] outline-none"
                 />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Timezone</label>
+                <select
+                  value={prefs.timezone || 'UTC'}
+                  onChange={(e) => setPrefs({...prefs, timezone: e.target.value})}
+                  className="w-full h-14 px-5 rounded-xl border border-slate-200 bg-white text-sm font-bold focus:border-[rgb(152,16,250)] outline-none appearance-none cursor-pointer"
+                >
+                  <option value="UTC">UTC (Default)</option>
+                  <option value="Asia/Karachi">Pakistan (GMT+5)</option>
+                  <option value="America/New_York">New York (EST/EDT)</option>
+                  <option value="America/Los_Angeles">Los Angeles (PST/PDT)</option>
+                  <option value="Europe/London">London (GMT/BST)</option>
+                  <option value="Europe/Paris">Paris (CET/CEST)</option>
+                  <option value="Asia/Dubai">Dubai (GST)</option>
+                  <option value="Asia/Tokyo">Tokyo (JST)</option>
+                  <option value="Asia/Shanghai">Shanghai (CST)</option>
+                  <option value="Asia/Singapore">Singapore (SGT)</option>
+                  <option value="Australia/Sydney">Sydney (AEDT/AEST)</option>
+                </select>
               </div>
             </div>
           </div>
