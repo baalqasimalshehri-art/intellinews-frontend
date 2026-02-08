@@ -145,6 +145,14 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     // Fetch notifications on mount and location change (for internal pages)
     if (isInternalPage) {
       fetchNotifications();
+
+      // Poll for new notifications every 30 seconds
+      const pollInterval = setInterval(() => {
+        fetchNotifications();
+      }, 30000); // 30 seconds
+
+      // Cleanup interval on unmount or when leaving internal pages
+      return () => clearInterval(pollInterval);
     }
   }, [location]);
 
