@@ -22,6 +22,7 @@ export interface UserPreferencesPayload {
   deliveryDay?: string;
   deliveryDate?: number;
   autoScrape?: boolean;  // Control whether to auto-scrape after saving preferences
+  timezone?: string;  // User's timezone (e.g., "America/New_York", "UTC")
 }
 
 export interface UserResponse {

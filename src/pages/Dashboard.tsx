@@ -73,7 +73,7 @@ const Dashboard: React.FC = () => {
 
         setSchedule({
           frequency: freq,
-          time: `${prefs.deliveryTime || '09:00'} UTC`,
+          time: `${prefs.deliveryTime || '09:00'} ${prefs.timezone || 'UTC'}`,
           details: details
         });
       }
