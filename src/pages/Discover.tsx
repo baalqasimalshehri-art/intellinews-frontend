@@ -404,7 +404,7 @@ const Discover = () => {
           <div className="space-y-6">
             <h3 className="text-sm font-semibold text-black uppercase tracking-widest border-b border-slate-50 pb-3">Executive Summary</h3>
             <div className="prose prose-slate max-w-none text-base font-normal text-slate-600 leading-relaxed space-y-4">
-              <p>{selectedArticle.summary}</p>
+              <p>{selectedArticle.summary || (selectedArticle.content ? selectedArticle.content.slice(0, 400) + '…' : 'Summary is being generated. Please check back shortly.')}</p>
             </div>
           </div>
 
@@ -643,7 +643,7 @@ const Discover = () => {
                     </div>
 
                     <p className="text-base text-slate-500 line-clamp-2 leading-relaxed font-normal">
-                      {article.summary}
+                      {article.summary || (article.content ? article.content.slice(0, 200) + '…' : 'Summary coming soon.')}
                     </p>
 
                     {article.reasoning && (
