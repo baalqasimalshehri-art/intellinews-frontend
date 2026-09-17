@@ -20,9 +20,74 @@ const Preferences = () => {
   const [customTopicPool, setCustomTopicPool] = useState<string[]>([]);
   const [customKeywordPool, setCustomKeywordPool] = useState<string[]>([]);
 
-  // Domain-aware suggestions based on selected source
-  const domainTopics = getTopicsForSource(prefs.source);
-  const domainKeywords = getKeywordsForSource(prefs.source);
+  // AI-suggested topics/keywords, refreshed from the backend.
+  // Seeded with the static lists so the UI renders instantly, then replaced
+  // by trend-derived suggestions once the request resolves.
+  const [domainTopics, setDomainTopics] = useState<string[]>(() => getTopicsForSource(prefs.source));
+  const [domainKeywords, setDomainKeywords] = useState<string[]>(() => getKeywordsForSource(prefs.source));
+  const [topicsLoading, setTopicsLoading] = useState(false);
+  const [keywordsLoading, setKeywordsLoading] = useState(false);
+  const [topicsLive, setTopicsLive] = useState(false);
+  const [keywordsLive, setKeywordsLive] = useState(false);
+
+  // Serialised topic list, so the keyword effect only re-runs on real changes
+  const selectedTopicsKey = prefs.topics.join('|');
+
+  /** Load trending topics for the selected source. */
+  const loadTopics = React.useCallback(async (source: ContentSource) => {
+    setTopicsLoading(true);
+    try {
+      const res = await api.getSuggestedTopics(source, 24);
+      if (res.topics?.length) {
+        setDomainTopics(res.topics);
+        setTopicsLive(!!res.generated);
+      }
+    } catch (err) {
+      // Network/API failure — keep the static list already on screen
+      console.warn('[Preferences] Topic suggestions unavailable, using defaults:', err);
+      setDomainTopics(getTopicsForSource(source));
+      setTopicsLive(false);
+    } finally {
+      setTopicsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadTopics(prefs.source);
+  }, [prefs.source, loadTopics]);
+
+  // Suggest keywords for whatever topics are currently selected.
+  useEffect(() => {
+    const topics = selectedTopicsKey ? selectedTopicsKey.split('|') : [];
+    if (!topics.length) {
+      setDomainKeywords(getKeywordsForSource(prefs.source));
+      setKeywordsLive(false);
+      return;
+    }
+
+    let cancelled = false;
+    // Debounce so rapid topic toggling doesn't fire a request per click
+    const timer = setTimeout(async () => {
+      setKeywordsLoading(true);
+      try {
+        const res = await api.getSuggestedKeywords(topics, prefs.source, 12);
+        if (!cancelled && res.keywords?.length) {
+          setDomainKeywords(res.keywords);
+          setKeywordsLive(!!res.generated);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          console.warn('[Preferences] Keyword suggestions unavailable, using defaults:', err);
+          setDomainKeywords(getKeywordsForSource(prefs.source));
+          setKeywordsLive(false);
+        }
+      } finally {
+        if (!cancelled) setKeywordsLoading(false);
+      }
+    }, 600);
+
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [selectedTopicsKey, prefs.source]);
 
   // Dynamic placeholders based on source
   const getTopicPlaceholder = () => {
@@ -374,7 +439,27 @@ const Preferences = () => {
             
             {/* Topics */}
             <div className="space-y-6">
-              <label className="text-sm font-bold text-slate-700 block">Interest Domains (Topics)</label>
+              <div className="flex items-center gap-3 flex-wrap">
+                <label className="text-sm font-bold text-slate-700">Interest Domains (Topics)</label>
+                {topicsLoading && (
+                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-400">
+                    <RefreshIcon className="w-3.5 h-3.5 animate-spin" /> Analysing trends…
+                  </span>
+                )}
+                {!topicsLoading && topicsLive && (
+                  <span className="px-2.5 py-1 rounded-full bg-purple-50 text-[rgb(152,16,250)] text-[11px] font-bold uppercase tracking-wide">
+                    AI · Trending now
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => loadTopics(prefs.source)}
+                  disabled={topicsLoading}
+                  className="ml-auto inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-[rgb(152,16,250)] disabled:opacity-40 transition-colors"
+                >
+                  <RefreshIcon className={`w-3.5 h-3.5 ${topicsLoading ? 'animate-spin' : ''}`} /> Refresh
+                </button>
+              </div>
               <div className="flex gap-3 max-w-xl">
                 <input
                   type="text"
@@ -425,7 +510,24 @@ const Preferences = () => {
 
             {/* Keywords */}
             <div className="space-y-6">
-              <label className="text-sm font-bold text-slate-700 block">Deep Tracking (Keywords)</label>
+              <div className="flex items-center gap-3 flex-wrap">
+                <label className="text-sm font-bold text-slate-700">Deep Tracking (Keywords)</label>
+                {keywordsLoading && (
+                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-400">
+                    <RefreshIcon className="w-3.5 h-3.5 animate-spin" /> Suggesting for your topics…
+                  </span>
+                )}
+                {!keywordsLoading && keywordsLive && prefs.topics.length > 0 && (
+                  <span className="px-2.5 py-1 rounded-full bg-purple-50 text-[rgb(152,16,250)] text-[11px] font-bold uppercase tracking-wide">
+                    AI · Matched to {prefs.topics.length} topic{prefs.topics.length > 1 ? 's' : ''}
+                  </span>
+                )}
+              </div>
+              {prefs.topics.length === 0 && (
+                <p className="text-xs font-medium text-slate-400 -mt-3">
+                  Select a topic above and we'll suggest keywords tailored to it.
+                </p>
+              )}
               <div className="flex gap-3 max-w-xl">
                 <input
                   type="text"

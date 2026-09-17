@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ChevronRight, ArrowLeft, Globe, Zap, RefreshCw, CheckCircle, FileText, BookOpen, Plus, X, AlertCircle, TrendingUp
@@ -16,11 +16,16 @@ const Onboarding = () => {
   const [keywordInput, setKeywordInput] = useState('');
   const [topicInput, setTopicInput] = useState('');
   
-  // Topic Pools
-  const PREDEFINED_TOPICS = ['AI', 'Security', 'FinTech', 'BioTech'];
+  // Topic Pools — seeded statically, then replaced by trend-derived suggestions
+  const [PREDEFINED_TOPICS, setPredefinedTopics] = useState<string[]>([
+    'AI', 'Security', 'FinTech', 'BioTech'
+  ]);
   const [userAddedTopics, setUserAddedTopics] = useState<string[]>([]);
 
   // Keyword Pools
+  const [suggestedKeywords, setSuggestedKeywords] = useState<string[]>(
+    KEYWORD_RECOMMENDATIONS.slice(0, 5)
+  );
   const [userAddedKeywords, setUserAddedKeywords] = useState<string[]>([]);
 
   const [prefs, setPrefs] = useState<{
@@ -46,6 +51,39 @@ const Onboarding = () => {
   });
   const [preview, setPreview] = useState<{ message: string; articles: ArticleSummary[]; sources?: any[] } | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+
+  // Pull trending topics for the chosen domain. Falls back to the seeded list.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await api.getSuggestedTopics(prefs.domain, 12);
+        if (!cancelled && res.topics?.length) setPredefinedTopics(res.topics);
+      } catch (err) {
+        console.warn('[Onboarding] Topic suggestions unavailable, using defaults:', err);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [prefs.domain]);
+
+  // Suggest keywords for whatever topics the user has picked so far.
+  const onboardingTopicsKey = prefs.topics.join('|');
+  useEffect(() => {
+    const topics = onboardingTopicsKey ? onboardingTopicsKey.split('|') : [];
+    if (!topics.length) return;
+
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        const res = await api.getSuggestedKeywords(topics, prefs.domain, 8);
+        if (!cancelled && res.keywords?.length) setSuggestedKeywords(res.keywords);
+      } catch (err) {
+        console.warn('[Onboarding] Keyword suggestions unavailable, using defaults:', err);
+      }
+    }, 600);
+
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [onboardingTopicsKey, prefs.domain]);
 
   const handleNext = async () => {
     if (step === 2) {
@@ -154,7 +192,7 @@ const Onboarding = () => {
       return;
     }
     const val = keywordInput.trim();
-    if (!userAddedKeywords.includes(val) && !KEYWORD_RECOMMENDATIONS.includes(val)) {
+    if (!userAddedKeywords.includes(val) && !suggestedKeywords.includes(val)) {
       setUserAddedKeywords(prev => [...prev, val]);
     }
     if (!prefs.keywords.includes(val)) {
@@ -384,7 +422,7 @@ const Onboarding = () => {
                 </button>
               </div>
               <div className="flex flex-wrap gap-4 pt-1">
-                {KEYWORD_RECOMMENDATIONS.slice(0, 5).map(k => (
+                {suggestedKeywords.map(k => (
                   <button 
                     key={k}
                     onClick={() => toggleKeyword(k)}

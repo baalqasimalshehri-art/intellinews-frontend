@@ -76,6 +76,24 @@ export interface ArticleStatsResponse {
   avg_summary_length: number;
 }
 
+export interface SuggestedTopicsResponse {
+  topics: string[];
+  source: string;
+  /** true when GPT produced the list, false when a static fallback was used */
+  generated: boolean;
+  reason?: string;
+  articlesAnalysed?: number;
+  trendWindowDays?: number;
+}
+
+export interface SuggestedKeywordsResponse {
+  keywords: string[];
+  topics: string[];
+  generated: boolean;
+  reason?: string;
+  articlesMatched?: number;
+}
+
 // ============================================================================
 // API Client Class
 // ============================================================================
@@ -299,6 +317,37 @@ class IntelliNewsAPI {
    */
   async getArticleStats(): Promise<ArticleStatsResponse> {
     return this.request<ArticleStatsResponse>('/api/articles/stats/summary');
+  }
+
+  // ============================================================================
+  // AI Suggestions (dynamic topics & keywords)
+  // ============================================================================
+
+  /**
+   * Get topics currently trending across recently scraped articles.
+   * Derived from real article tag frequency, then cleaned up by GPT.
+   */
+  async getSuggestedTopics(
+    source: string = 'both',
+    limit: number = 24
+  ): Promise<SuggestedTopicsResponse> {
+    const params = new URLSearchParams({ source, limit: String(limit) });
+    return this.request<SuggestedTopicsResponse>(`/api/suggestions/topics?${params}`);
+  }
+
+  /**
+   * Get keywords relevant to the topics the user has selected.
+   * Grounded in articles that actually match those topics.
+   */
+  async getSuggestedKeywords(
+    topics: string[],
+    source: string = 'both',
+    limit: number = 12
+  ): Promise<SuggestedKeywordsResponse> {
+    return this.request<SuggestedKeywordsResponse>('/api/suggestions/keywords', {
+      method: 'POST',
+      body: JSON.stringify({ topics, source, limit }),
+    });
   }
 
   // ============================================================================
