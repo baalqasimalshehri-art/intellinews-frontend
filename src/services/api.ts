@@ -132,12 +132,11 @@ class IntelliNewsAPI {
       defaultHeaders['Authorization'] = `Bearer ${token}`;
     }
 
-    console.log('[API] Request:', {
-      url,
-      method: options.method || 'GET',
-      hasToken: !!token,
-      tokenPrefix: token ? token.substring(0, 20) + '...' : 'none'
-    });
+    // Debug logging only in development; never log any part of the token.
+    const debug = import.meta.env.DEV;
+    if (debug) {
+      console.log('[API] Request:', { url, method: options.method || 'GET', hasToken: !!token });
+    }
 
     try {
       const response = await fetch(url, {
@@ -148,11 +147,9 @@ class IntelliNewsAPI {
         },
       });
 
-      console.log('[API] Response:', {
-        url,
-        status: response.status,
-        ok: response.ok
-      });
+      if (debug) {
+        console.log('[API] Response:', { url, status: response.status, ok: response.ok });
+      }
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -163,7 +160,9 @@ class IntelliNewsAPI {
       }
 
       const data = await response.json();
-      console.log('[API] Success data:', data);
+      if (debug) {
+        console.log('[API] Success data:', data);
+      }
       return data;
     } catch (error) {
       console.error(`[API] Exception (${endpoint}):`, error);
