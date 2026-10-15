@@ -66,7 +66,7 @@ class AdminService {
   }
 
   async toggleUserStatus(userId: string): Promise<void> {
-    await api.put(`/admin/users/${userId}/status`);
+    await api.put(`/admin/users/${userId}/status`, {});
   }
 
   async deleteUser(userId: string): Promise<void> {
