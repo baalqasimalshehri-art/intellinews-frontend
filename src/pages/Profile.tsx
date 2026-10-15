@@ -68,7 +68,7 @@ const Profile = () => {
       if (user) {
         user.name = userName;
         user.email = email;
-        authService.setUser(user);
+        authService.updateUser(user);
       }
 
       toast.success('Profile information updated successfully.');

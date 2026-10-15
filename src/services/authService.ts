@@ -3,6 +3,7 @@ import { api } from './api';
 export interface User {
   id: number;
   email: string;
+  name?: string;
   isActive: boolean;
   isVerified: boolean;
   role?: string;
