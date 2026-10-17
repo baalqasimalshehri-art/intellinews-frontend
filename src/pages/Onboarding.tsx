@@ -2,11 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ChevronRight, ArrowLeft, Globe, Zap, RefreshCw, CheckCircle, FileText, BookOpen, Plus, X, AlertCircle, TrendingUp
+  ChevronRight, ArrowLeft, Globe, Zap, RefreshCw, CheckCircle, BookOpen, Plus, X, AlertCircle, TrendingUp
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { generatePersonalizedNewsletter } from '../services/aiService';
-import { ArticleSummary } from '../types';
 import { KEYWORD_RECOMMENDATIONS } from '../constants';
 import { api } from '../services/api';
 
@@ -49,7 +47,6 @@ const Onboarding = () => {
     deliveryDay: 'Monday',
     deliveryDate: 1
   });
-  const [preview, setPreview] = useState<{ message: string; articles: ArticleSummary[]; sources?: any[] } | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
 
   // Pull trending topics for the chosen domain. Falls back to the seeded list.
@@ -91,29 +88,7 @@ const Onboarding = () => {
         toast.error("At least one topic is required.");
         return;
       }
-      setIsGenerating(true);
-      
-      // Safety timeout to prevent infinite processing
-      const timeout = setTimeout(() => {
-        if (isGenerating) {
-          setIsGenerating(false);
-          setStep(3);
-          toast.info("Connection delayed. Pre-configuring your dashboard.");
-        }
-      }, 8000);
-
-      try {
-        const data = await generatePersonalizedNewsletter(prefs.topics, prefs.keywords);
-        setPreview(data);
-        clearTimeout(timeout);
-        setStep(3);
-      } catch (err) {
-        console.error("Onboarding Error:", err);
-        clearTimeout(timeout);
-        setStep(3); // Fail forward
-      } finally {
-        setIsGenerating(false);
-      }
+      setStep(3);
     } else if (step === 3) {
       // Save preferences to backend
       try {
@@ -494,29 +469,10 @@ const Onboarding = () => {
         {step === 3 && (
           <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
             <div className="space-y-3 max-h-[320px] overflow-y-auto pr-1 custom-scrollbar">
-                {preview?.articles && preview.articles.length > 0 ? (
-                  preview.articles.map((a, i) => (
-                    <div key={i} className="p-4 rounded-xl border border-slate-100 bg-slate-50/30 flex gap-4">
-                        <div className="w-10 h-10 rounded-lg bg-white border border-slate-100 flex items-center justify-center text-[rgb(152,16,250)] shrink-0 shadow-sm">
-                            <FileText className="w-5 h-5" />
-                        </div>
-                        <div className="space-y-1 min-w-0">
-                            <h4 className="text-sm font-bold text-slate-900 truncate">{a.title}</h4>
-                            <div className="flex items-center gap-2">
-                                <span className="text-[9px] text-slate-400 font-black uppercase tracking-widest">{a.source}</span>
-                                <span className="w-1 h-1 rounded-full bg-slate-300" />
-                                <span className="text-[9px] text-emerald-600 font-black uppercase tracking-widest">{a.relevanceScore}% RELEVANCE</span>
-                            </div>
-                            <p className="text-[12px] text-slate-500 line-clamp-2 leading-relaxed font-normal">{a.summary}</p>
-                        </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="p-12 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-                    <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Compiling initial feed...</p>
-                    <p className="text-[11px] text-slate-400 mt-1">Your intelligence pipeline is now active.</p>
-                  </div>
-                )}
+                <div className="p-12 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                  <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Compiling initial feed...</p>
+                  <p className="text-[11px] text-slate-400 mt-1">Your intelligence pipeline is now active.</p>
+                </div>
             </div>
             
             <div className="bg-purple-50 p-5 rounded-2xl border border-purple-100 flex items-center gap-5">
