@@ -223,6 +223,15 @@ const Preferences = () => {
       // Use authService to update user data properly
       authService.updateUser(updatedUser);
 
+      // Remove legacy discovery caches created without a preferences key.
+      // Existing bookmarked articles and unrelated localStorage remain intact.
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith(`discover_articles_${user.id}_`) ||
+            key.startsWith(`discover_articles_timestamp_${user.id}_`)) {
+          localStorage.removeItem(key);
+        }
+      });
+
       // Show success message (no auto-scraping)
       toast.success('Preferences saved! Go to Discover and click "Scrape" or "Refresh" to find articles.', {
         duration: 4000
