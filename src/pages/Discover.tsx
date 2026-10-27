@@ -75,11 +75,15 @@ const Discover = () => {
       else if (source === 'industry') sourceType = 'industry';
       else if (source === 'financial') sourceType = 'financial';
 
+      // Cache is scoped to the exact preferences, not just the user/source.
+      // A topic or keyword change must never display old recommendations.
+      const preferencesKey = JSON.stringify({ topics, keywords, sourceType });
+      const cacheScope = `${user.id}_${sourceType}_${encodeURIComponent(preferencesKey)}`;
+
       // Check cache first (unless skipCache is true)
-      // Include source type in cache key so changing source invalidates cache
       if (!skipCache) {
-        const cachedArticles = localStorage.getItem(`discover_articles_${user.id}_${sourceType}`);
-        const cachedTimestamp = localStorage.getItem(`discover_articles_timestamp_${user.id}_${sourceType}`);
+        const cachedArticles = localStorage.getItem(`discover_articles_${cacheScope}`);
+        const cachedTimestamp = localStorage.getItem(`discover_articles_timestamp_${cacheScope}`);
 
         if (cachedArticles && cachedTimestamp) {
           const cacheAge = Date.now() - parseInt(cachedTimestamp);
@@ -159,8 +163,8 @@ const Discover = () => {
       }
 
       // Update cache with all discovered articles (include source type in cache key)
-      localStorage.setItem(`discover_articles_${user.id}_${sourceType}`, JSON.stringify(allArticles));
-      localStorage.setItem(`discover_articles_timestamp_${user.id}_${sourceType}`, Date.now().toString());
+      localStorage.setItem(`discover_articles_${cacheScope}`, JSON.stringify(allArticles));
+      localStorage.setItem(`discover_articles_timestamp_${cacheScope}`, Date.now().toString());
 
       if (allArticles.length === 0) {
         toast.info('No articles found. Try adjusting your preferences or run the scraper.');
