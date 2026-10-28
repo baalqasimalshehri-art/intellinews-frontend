@@ -75,11 +75,32 @@ const Discover = () => {
       else if (source === 'industry') sourceType = 'industry';
       else if (source === 'financial') sourceType = 'financial';
 
+      // Cache key includes the interests themselves, not just the source type.
+      // Without the topics and keywords in the key, changing them kept serving the
+      // previous results — old articles and old "why selected" text — until the
+      // five minute window ran out.
+      const interestKey = [
+        ...[...topics].map(String).sort(),
+        '|',
+        ...[...keywords].map(String).sort(),
+      ].join(',');
+      const cacheKey = `discover_articles_${user.id}_${sourceType}_${interestKey}`;
+      const cacheTimeKey = `discover_articles_timestamp_${user.id}_${sourceType}_${interestKey}`;
+
+      // Drop any entries left by older builds or by previous interests, so stale
+      // results cannot linger in the browser.
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith(`discover_articles`) && k.includes(`_${user.id}_`)
+            && k !== cacheKey && k !== cacheTimeKey) {
+          localStorage.removeItem(k);
+        }
+      }
+
       // Check cache first (unless skipCache is true)
-      // Include source type in cache key so changing source invalidates cache
       if (!skipCache) {
-        const cachedArticles = localStorage.getItem(`discover_articles_${user.id}_${sourceType}`);
-        const cachedTimestamp = localStorage.getItem(`discover_articles_timestamp_${user.id}_${sourceType}`);
+        const cachedArticles = localStorage.getItem(cacheKey);
+        const cachedTimestamp = localStorage.getItem(cacheTimeKey);
 
         if (cachedArticles && cachedTimestamp) {
           const cacheAge = Date.now() - parseInt(cachedTimestamp);
@@ -158,9 +179,9 @@ const Discover = () => {
         }
       }
 
-      // Update cache with all discovered articles (include source type in cache key)
-      localStorage.setItem(`discover_articles_${user.id}_${sourceType}`, JSON.stringify(allArticles));
-      localStorage.setItem(`discover_articles_timestamp_${user.id}_${sourceType}`, Date.now().toString());
+      // Update cache under the interest-aware key
+      localStorage.setItem(cacheKey, JSON.stringify(allArticles));
+      localStorage.setItem(cacheTimeKey, Date.now().toString());
 
       if (allArticles.length === 0) {
         toast.info('No articles found. Try adjusting your preferences or run the scraper.');
